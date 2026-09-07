@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 810" fill="none">
+  <!-- TODO(artwork): replace placeholder editorial field with approved scene artwork; preserve the clear analytical center. -->
+  <path fill="#FFF0C2" d="M0 0h1440v810H0z"/>
+  <path d="M-80 660c70-26 122 1 142 69 17 52 6 103-3 120H-80z" fill="#BFD66F"/>
+  <path d="M1264-58c-30 70 10 128 77 145 84 21 149-6 162-70l-2-61z" fill="#FBD453"/>
+  <path d="M1320-50c-16 40 6 75 43 84 43 10 76-4 83-35" fill="#F19D31"/>
+  <path d="M1383 50l20 6m-28-31 15 10M38 756l10-17m8 26 13-10" stroke="#24291A" stroke-width="3" stroke-linecap="round"/>
+  <path d="M-4 716c19-8 32-7 44 1" stroke="#24291A" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

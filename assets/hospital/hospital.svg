@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 110" fill="none">
+  <!-- TODO(artwork): replace placeholder hospital; the building is a generic setting and does not depict the study hospital. -->
+  <g stroke="#171810" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8 103h104M14 100V40h29V16h44v29h20v55" fill="#F5E9BA"/>
+    <path d="M39 17h53M9 40h30M90 45h22"/>
+    <path d="M49 32h9v11h-9zm20 0h9v11h-9zM23 53h10v12H23zm26 4h9v11h-9zm20 0h9v11h-9zm24 1h7v11h-7z" fill="#8AB1B2" stroke-width="2.4"/>
+    <path d="M52 100V80h22v20" fill="#376D8F"/>
+    <path d="M63 80v20M47 77h32M24 79h9v11h-9zm69 0h7v11h-7z"/>
+    <path d="M62 17V7h23v10" fill="#fff"/>
+  </g>
+</svg>

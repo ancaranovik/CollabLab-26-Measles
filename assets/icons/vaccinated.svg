@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- TODO(artwork): replace placeholder vaccination-group circle; pair with the exact DOM label for at least one dose. -->
+  <circle cx="16" cy="16" r="12" fill="#AFC789" stroke="#171810" stroke-width="2.5"/>
+  <circle cx="16" cy="16" r="5" stroke="#171810" stroke-width="2"/>
+</svg>

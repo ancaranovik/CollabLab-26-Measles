@@ -1,0 +1,16 @@
+.agents/
+.codex/
+verification/
+_site/
+node_modules/
+.env
+.env.*
+!.env.example
+references/brief/
+references/design/
+references/content/
+references/research/DATA.md
+AGENTS.md
+DESIGN.md
+MILESTONE1.md
+skills-lock.json

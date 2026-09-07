@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- TODO(artwork): replace placeholder vaccination-group square; pair with the exact DOM label for no measles vaccine dose. -->
+  <path d="M5 5h22v22H5z" fill="#ACC7D3" stroke="#171810" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M12 12h8v8h-8z" stroke="#171810" stroke-width="2"/>
+</svg>

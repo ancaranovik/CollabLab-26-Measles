@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- TODO(artwork): replace placeholder hospital-source marker; the building icon encodes source of infection only. -->
+  <g stroke="#171810" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 28V11h6V4h14v24M3 28h26" fill="#FBD453"/>
+    <path d="M10 28v-7h7v7M17 9h2m3 0h1m-6 5h2m3 0h1m-1 5h1"/>
+  </g>
+</svg>
