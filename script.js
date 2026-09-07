@@ -644,6 +644,13 @@
     };
     root.querySelectorAll("[data-quiz]").forEach((quiz) => {
       const options = [...quiz.querySelectorAll(".quiz-option")];
+      // Shuffle once per page load; move the buttons so correctness and keyboard
+      // reading order stay attached to the same choices.
+      for (let index = options.length - 1; index > 0; index -= 1) {
+        const swapIndex = Math.floor(Math.random() * (index + 1));
+        [options[index], options[swapIndex]] = [options[swapIndex], options[index]];
+      }
+      quiz.querySelector('.quiz-options').append(...options);
       const explanation = quiz.querySelector(".quiz-explanation");
       const next = quiz.querySelector(".quiz-continue");
       const feedback = document.createElement('div');
