@@ -650,6 +650,20 @@
         const swapIndex = Math.floor(Math.random() * (index + 1));
         [options[index], options[swapIndex]] = [options[swapIndex], options[index]];
       }
+      // Avoid an apparently unchanged answer position on consecutive reloads.
+      const orderKey = `measles-quiz-position-v2:${quiz.dataset.quiz}`;
+      let previousPosition = 0;
+      try {
+        const saved = sessionStorage.getItem(orderKey);
+        if (saved !== null) previousPosition = Number(saved);
+      } catch { /* Shuffling still works when browser storage is unavailable. */ }
+      if (options.findIndex(option => option.dataset.correct === 'true') === previousPosition) {
+        const offset = 1 + Math.floor(Math.random() * (options.length - 1));
+        options.push(...options.splice(0, offset));
+      }
+      try {
+        sessionStorage.setItem(orderKey, String(options.findIndex(option => option.dataset.correct === 'true')));
+      } catch { /* Storage is optional. */ }
       quiz.querySelector('.quiz-options').append(...options);
       const explanation = quiz.querySelector(".quiz-explanation");
       const next = quiz.querySelector(".quiz-continue");
