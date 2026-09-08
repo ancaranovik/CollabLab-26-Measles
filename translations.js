@@ -5,7 +5,7 @@ window.MEASLES_VI = Object.freeze({
   "Skip the interactive and read the comparison": "Bỏ qua phần tương tác và đọc nội dung so sánh",
   "Collab Lab": "Collab Lab",
   "Measles,": "Bệnh sởi,",
-  "in focus.": "nhìn gần hơn.",
+  "in focus.": "gần hơn.",
   "A visual summary of hospital-based research": "Tóm tắt trực quan một nghiên cứu tại bệnh viện",
   "Read the story": "Đọc câu chuyện",
   "0 years": "0 tuổi",
