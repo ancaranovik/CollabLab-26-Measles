@@ -1,5 +1,6 @@
 (() => {
   'use strict';
+  const t = text => window.MeaslesI18n?.t(text) ?? text;
 
   // Study-specific explanations paraphrase the existing article and canonical
   // paper (Methods pp. 3–4, Introduction p. 2, Limitations p. 11).
@@ -64,7 +65,7 @@
       activeTerm.setAttribute('aria-expanded', 'false');
     }
     activeTerm = term;
-    note.textContent = TERM_NOTES[term.dataset.term];
+    note.textContent = t(TERM_NOTES[term.dataset.term]);
     note.hidden = false;
     term.setAttribute('aria-describedby', note.id);
     term.setAttribute('aria-expanded', 'true');
@@ -110,5 +111,7 @@
     else if (activeTerm) hideNote();
   }, { passive: true });
   window.addEventListener('resize', hideNote, { passive: true });
+  window.addEventListener('story:languagechange', () => { if (activeTerm) showNote(activeTerm); });
+  window.addEventListener('story:languagepositioned', () => { if (activeTerm) positionNote(); });
   window.visualViewport?.addEventListener('resize', hideNote, { passive: true });
 })();

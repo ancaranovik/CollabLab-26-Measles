@@ -1,5 +1,6 @@
 (() => {
   'use strict';
+  const t = text => window.MeaslesI18n?.t(text) ?? text;
   if (!window.ScrollTrigger || !window.__MEASLES_STORY__) return;
   const sections = [
     { label: 'Hero', selector: '.article-hero' },
@@ -44,7 +45,7 @@
     sections.forEach(section => { if (!section.button.disabled && section.top <= point) index = section.index; });
     if (index === activeIndex) return;
     activeIndex = index;
-    currentLabel.textContent = `${index + 1} / ${sections.length} · ${sections[index].label}`;
+    currentLabel.textContent = `${index + 1} / ${sections.length} · ${t(sections[index].label)}`;
     sections.forEach(section => {
       section.button.dataset.status = section.index < index ? 'complete' : section.index === index ? 'active' : 'remaining';
       if (section.index === index) section.button.setAttribute('aria-current', 'step');
@@ -55,7 +56,8 @@
     sections.forEach(section => {
       const locked = !!section.element.closest('[hidden]');
       section.button.disabled = locked;
-      section.button.setAttribute('aria-label', section.label + (locked ? ' — complete the preceding quiz to unlock' : ''));
+      section.button.setAttribute('aria-label', t(section.label) + (locked ? t(' — complete the preceding quiz to unlock') : ''));
+      section.button.querySelector('.progress-label').textContent = t(section.label);
       section.top = locked ? Infinity : section.element.getBoundingClientRect().top + window.scrollY;
     });
     activeIndex = -1;
@@ -63,6 +65,7 @@
   }
   ScrollTrigger.create({ id: 'story-progress', start: 0, end: 'max', onUpdate: update });
   ScrollTrigger.addEventListener('refresh', measure);
+  window.addEventListener('story:languagechange', () => { rail.setAttribute('aria-label', t('Story progress')); measure(); });
   const observer = new MutationObserver(measure);
   chapters.forEach(chapter => observer.observe(chapter, { attributes: true, attributeFilter: ['hidden'] }));
   window.dispatchEvent(new Event('story:viewportchange'));

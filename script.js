@@ -1,5 +1,6 @@
 (() => {
   "use strict";
+  const t = text => window.MeaslesI18n?.t(text) ?? text;
 
   // Scientific values and definitions verified against the canonical paper:
   // definitions p. 3, study frame pp. 1 and 4, comparison Table 2 p. 9.
@@ -296,21 +297,21 @@
     const comparison = COMPARISONS[state.comparison || "vaccine"];
     const coverage = comparison.metric === "coverage";
     stage.dataset.metric = coverage ? "coverage" : "source";
-    legend.querySelector(".legend-title").textContent = coverage ? "Vaccinated: at least one dose" : "Hospital-related source";
-    legend.querySelector(".legend-explanation").textContent = coverage ? "Unpatterned: no doses" : "Unpatterned: community source";
-    normalization.textContent = state.comparison === "older" ? "Each group = 100% · Over 18 months" : "Each group = 100%";
+    legend.querySelector(".legend-title").textContent = t(coverage ? "Vaccinated: at least one dose" : "Hospital-related source");
+    legend.querySelector(".legend-explanation").textContent = t(coverage ? "Unpatterned: no doses" : "Unpatterned: community source");
+    normalization.textContent = t(state.comparison === "older" ? "Each group = 100% · Over 18 months" : "Each group = 100%");
     labels.forEach((label, groupIndex) => {
-      label.querySelector("h3").textContent = comparison.labels[groupIndex];
-      label.querySelector(".group-definition").textContent = comparison.definitions[groupIndex];
+      label.querySelector("h3").textContent = t(comparison.labels[groupIndex]);
+      label.querySelector(".group-definition").textContent = t(comparison.definitions[groupIndex]);
       label.querySelector(".group-badge").textContent = comparison.badges[groupIndex];
       const percentage = label.querySelector(".percentage");
       percentage.textContent = comparison.percentages[groupIndex];
-      percentage.setAttribute("aria-label", `${comparison.percentages[groupIndex]} ${coverage ? "vaccinated with at least one dose" : "hospital-related source"}`);
+      percentage.setAttribute("aria-label", `${comparison.percentages[groupIndex]} ${t(coverage ? "vaccinated with at least one dose" : "hospital-related source")}`);
     });
     masks.forEach((mask, groupIndex) => {
       mask.dataset.proportion = String(state.source[groupIndex]);
     });
-    if (announce && changed) announcement.textContent = state.summary;
+    if (announce && changed) announcement.textContent = t(state.summary);
   }
 
   function setVisualState(index) {
@@ -587,19 +588,41 @@
   }
 
   function setupIntroAnimations() {
+    const age = root.querySelector('.age-scene');
+    const frame = document.createElement('div');
+    frame.className = 'age-frame';
+    age.before(frame);
+    frame.append(age);
     gsap.matchMedia().add('(prefers-reduced-motion: no-preference)', () => {
+      const sequence = gsap.timeline({ scrollTrigger: {
+        id: 'age-sequence', trigger: age, pin: age,
+        start: () => `top top+=${Math.max(54, (innerHeight - age.offsetHeight + 34) / 2)}`,
+        end: () => `+=${Math.max(380, innerHeight * 0.85)}`,
+        scrub: true, invalidateOnRefresh: true, anticipatePin: 1
+      }});
+      // Arrive fully visible, establish the pinned frame, then reveal the range.
+      sequence.set('.age-lineup img', { opacity: 0.45, scaleY: 0.82, transformOrigin: 'bottom center' })
+        .to({}, { duration: 0.25 })
+        .to('.age-lineup img', { opacity: 1, scaleY: 1, stagger: 0.08, duration: 0.45, ease: 'power1.inOut' })
+        .to({}, { duration: 0.2 });
       gsap.from('.hero-character', {
         x: () => window.innerWidth - root.querySelector('.hero-character').getBoundingClientRect().left + 24,
         opacity: 0, duration: 1.15, ease: 'power3.out'
       });
-      gsap.from('.age-lineup img', {
-        y: 28, opacity: 0, stagger: 0.1, duration: 0.65,
-        scrollTrigger: { trigger: '.age-scene', start: 'top 85%', toggleActions: 'play none none reverse' }
-      });
-      gsap.from('.records-visual > *', {
-        x: -24, opacity: 0, stagger: 0.15, duration: 0.7,
-        scrollTrigger: { trigger: '.records-visual', start: 'top 80%', toggleActions: 'play none none reverse' }
-      });
+      const records = gsap.timeline({ scrollTrigger: {
+        id: 'records-sequence', trigger: '.intro-scene-1', start: 'top 65%', end: 'bottom 50%', scrub: true
+      }});
+      records.fromTo('.records-visual img', { opacity: 0.5, y: 16 }, { opacity: 1, y: 0, duration: 0.4 })
+        .fromTo('.records-visual span', { opacity: 0.3, x: -12 }, { opacity: 1, x: 0, stagger: 0.25, duration: 0.35 });
+      // Existing methods and study-question emphasis provide short visual bridges.
+      for (const [scene, selector] of [
+        ['.intro-scene-2', '.technical-term'],
+        ['.intro-scene-3', '.accent-vaccinated, .accent-unvaccinated, .technical-term']
+      ]) {
+        gsap.fromTo(root.querySelector(scene).querySelectorAll(selector),
+          { backgroundSize: '0% 100%' }, { backgroundSize: '100% 100%', stagger: 0.3, ease: 'none',
+            scrollTrigger: { trigger: scene, start: 'top 65%', end: 'bottom 65%', scrub: true } });
+      }
     });
   }
   function firstRailStepForState(index) {
@@ -691,7 +714,7 @@
         const startHeight = feedback.getBoundingClientRect().height;
         options.forEach((candidate) => candidate.setAttribute("aria-pressed", String(candidate === option)));
         explanation.hidden = false;
-        explanation.textContent = (option.dataset.correct === "true" ? "Correct. " : "Not quite. ") + QUIZ_EXPLANATIONS[quiz.dataset.quiz];
+        explanation.textContent = t(option.dataset.correct === "true" ? "Correct." : "Not quite.") + " " + t(QUIZ_EXPLANATIONS[quiz.dataset.quiz]);
         next.hidden = false;
         if (reducedMotion) {
           finishAnswer();
@@ -777,6 +800,15 @@
     });
     window.matchMedia("(prefers-reduced-motion: reduce)").addEventListener("change", refreshLayout);
     window.addEventListener('story:viewportchange', refreshLayout);
+    window.addEventListener('story:languagechange', () => {
+      setStateMetadata(activeIndex, pinTrigger?.progress || 0, false);
+      announcement.textContent = t(STORY_STATES[STATE_ORDER[activeIndex]].summary);
+      root.querySelectorAll('[data-quiz]').forEach(quiz => {
+        const selected = quiz.querySelector('.quiz-option[aria-pressed="true"]');
+        if (selected) quiz.querySelector('.quiz-explanation').textContent =
+          t(selected.dataset.correct === 'true' ? 'Correct.' : 'Not quite.') + ' ' + t(QUIZ_EXPLANATIONS[quiz.dataset.quiz]);
+      });
+    });
     document.fonts.ready.then(() => ScrollTrigger.refresh());
 
     initialized = true;
