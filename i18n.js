@@ -5,6 +5,7 @@
   // inline emphasis, term buttons, chart marks and quiz listeners stay attached.
   const catalog = window.MEASLES_VI;
   let language = 'en';
+  let languageRequest = 0;
   const bindings = [];
   const attributes = [];
   const normalize = text => text.trim().replace(/\s+/g, ' ');
@@ -43,8 +44,6 @@
   document.body.append(control);
 
   function capturePosition() {
-    const age = window.ScrollTrigger?.getById('age-sequence');
-    if (age?.isActive) return { trigger: age, progress: age.progress };
     const point = Math.min(innerHeight * 0.4, 260);
     const candidates = [...document.querySelectorAll('.article-hero, .intro-scene, .story-step, .text-equivalent')]
       .filter(element => element.getClientRects().length && !element.closest('[hidden]'));
@@ -57,8 +56,17 @@
     return { element, ratio: (point - rect.top) / rect.height, point };
   }
 
-  function setLanguage(next) {
-    if (!['en', 'vi'].includes(next) || next === language) return;
+  async function setLanguage(next) {
+    if (!['en', 'vi'].includes(next)) return;
+    const request = ++languageRequest;
+    if (next === language) return;
+    // Load complete serif runs before changing language, including true italics
+    // and bold. English remains readable while the local font files arrive.
+    if (next === 'vi' && document.fonts) {
+      await Promise.all(['400', '700', 'italic 400', 'italic 700'].map(style =>
+        document.fonts.load(`${style} 16px "Lora Editorial"`))).catch(() => {});
+    }
+    if (request !== languageRequest) return;
     const position = capturePosition();
     language = next;
     document.documentElement.lang = next;
@@ -74,11 +82,9 @@
     // Text changes can resize foreground panels. Refresh existing triggers only;
     // never rebuild the population, reshuffle answers or reset chapter gates.
     window.ScrollTrigger?.refresh();
-    const y = position.trigger
-      ? position.trigger.start + position.progress * (position.trigger.end - position.trigger.start)
-      : position.element
-        ? position.element.getBoundingClientRect().top + scrollY + position.ratio * position.element.offsetHeight - position.point
-        : position.y;
+    const y = position.element
+      ? position.element.getBoundingClientRect().top + scrollY + position.ratio * position.element.offsetHeight - position.point
+      : position.y;
     window.scrollTo({ top: Math.max(0, y), behavior: 'instant' });
     window.ScrollTrigger?.update();
     window.dispatchEvent(new Event('story:languagepositioned'));

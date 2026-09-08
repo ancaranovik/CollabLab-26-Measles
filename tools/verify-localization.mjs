@@ -38,28 +38,8 @@ for (const [width, height, reducedMotion] of [[1440, 900, 'no-preference'], [390
   assert.equal(await overflow(), false);
   await page.getByRole('button', { name: 'English', exact: true }).click();
   assert.equal(await page.locator('#article-title').innerText(), heroEnglish);
-  const age = await page.evaluate(() => !!ScrollTrigger.getById('age-sequence'));
-  assert.equal(age, reducedMotion === 'no-preference');
-  if (age) {
-    const samples = [];
-    for (const progress of [0.05, 0.15, 0.6, 0.95, 0.15]) {
-      samples.push(await page.evaluate(progress => {
-        const trigger = ScrollTrigger.getById('age-sequence');
-        scrollTo(0, trigger.start + (trigger.end - trigger.start) * progress);
-        ScrollTrigger.update();
-        const rect = document.querySelector('.age-scene').getBoundingClientRect();
-        return { opacity: +getComputedStyle(document.querySelector('.age-lineup img')).opacity, top: rect.top, bottom: rect.bottom };
-      }, progress));
-    }
-    assert.equal(samples[0].opacity, samples[1].opacity);
-    assert.equal(samples[3].opacity, 1);
-    assert.equal(samples[4].opacity, samples[1].opacity);
-    assert.ok(samples[2].top >= 33 && samples[2].bottom <= height, JSON.stringify(samples));
-    const oldProgress = await page.evaluate(() => ScrollTrigger.getById('age-sequence').progress);
-    await page.getByRole('button', { name: 'Tiếng Việt', exact: true }).click();
-    assert.ok(Math.abs(await page.evaluate(() => ScrollTrigger.getById('age-sequence').progress) - oldProgress) < .003);
-    await page.screenshot({ path: `verification/vi-age-${width}.png` });
-  }
+  assert.equal(await page.evaluate(() => !!ScrollTrigger.getById('age-sequence')), false);
+  assert.equal(await page.locator('.age-frame').count(), 0);
   await page.evaluate(() => MeaslesI18n.setLanguage('vi'));
   await page.locator('.technical-term[data-term="herd-immunity"]').first().focus();
   await page.waitForTimeout(150);

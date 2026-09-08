@@ -146,8 +146,8 @@
   const POPULATION_MOTION = Object.freeze({ duration: 1.2, stagger: 0.2, batchSize: 20 });
   const cardAnimations = [];
   const stateTriggers = [];
-  let editorialChartContext = null;
-  const revealedCharts = new WeakSet();
+  const editorialCharts = new Map();
+  let languageChanging = false;
   let layout = null;
   let activeIndex = 0;
   let masterTimeline = null;
@@ -530,42 +530,63 @@
   }
   let crowdReveal = null;
   function setupEditorialCharts() {
-    editorialChartContext?.revert();
-    editorialChartContext = gsap.context(() => {
-      storyCards.forEach((card) => card.querySelectorAll('.editorial-chart').forEach((chart) => {
-        if (reducedMotion || revealedCharts.has(chart)) return;
-        // Exact values remain DOM text; only their presentation is animated.
-        const timeline = gsap.timeline({
-          defaults: { ease: 'power2.out', duration: 0.45 },
-          onComplete: () => revealedCharts.add(chart),
-          scrollTrigger: {
-            trigger: chart, start: 'top 82%',
-            toggleActions: 'play none none none', once: true
-          }
-        });
-        timeline.addLabel('frame', 0)
-          .fromTo(chart.querySelectorAll('figcaption, .chart-axis, .simple-axis'),
-            { opacity: 0 }, { opacity: 1, stagger: 0.06 }, 'frame');
-        const rows = [...chart.querySelectorAll('.chart-row')];
-        if (rows.length) {
-          rows.forEach((row, index) => {
-            const label = `row-${index}`;
-            timeline.addLabel(label, 0.25 + index * 0.48)
-              .fromTo(row.querySelector('span'), { opacity: 0, y: 4 }, { opacity: 1, y: 0 }, label)
-              .fromTo(row.querySelector('i'), { scaleX: 0, transformOrigin: 'left center' },
-                { scaleX: 1, duration: 0.75 }, `${label}+=0.12`)
-              .fromTo(row.querySelector('strong'), { opacity: 0, y: 5 },
-                { opacity: 1, y: 0 }, `${label}+=0.55`);
-          });
-        } else {
-          timeline.addLabel('proportion', 0.25)
-            .fromTo(chart.querySelector('.diagnosis-track i'),
-              { scaleX: 0, transformOrigin: 'left center' }, { scaleX: 1, duration: 0.9 }, 'proportion')
-            .fromTo(chart.querySelector('.chart-number'),
-              { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.55 }, 'proportion+=0.65');
+    // Wait until quiz gates are applied; restored scroll positions must not
+    // start charts during the initial, ungated layout pass.
+    if (!initialized) return;
+    storyCards.forEach(card => card.querySelectorAll('.editorial-chart').forEach(chart => {
+      const existing = editorialCharts.get(chart);
+      if (existing) {
+        if (reducedMotion && chart.dataset.chartState !== 'complete') {
+          existing.trigger?.kill();
+          existing.timeline.progress(1);
         }
-      }));
-    }, analysis);
+        return;
+      }
+      const fills = chart.querySelectorAll('.chart-track i, .diagnosis-track i');
+      const labels = chart.querySelectorAll('figcaption, .chart-axis, .simple-axis, .chart-row > span, .chart-row > strong, .chart-number');
+      const entry = { timeline: null, trigger: null, start: null };
+      editorialCharts.set(chart, entry);
+      // CSS supplies this empty state before first paint. Keep one timeline per
+      // chart across layout rebuilds so neither pending nor finished charts reset.
+      gsap.set(fills, { scaleX: 0, transformOrigin: 'left center' });
+      gsap.set(labels, { opacity: 0 });
+      chart.dataset.chartState = 'pending';
+      const timeline = entry.timeline = gsap.timeline({
+        paused: true,
+        defaults: { ease: 'power2.out', duration: 0.45 },
+        onComplete: () => { chart.dataset.chartState = 'complete'; }
+      });
+      timeline.to(chart.querySelectorAll('figcaption, .chart-axis, .simple-axis'),
+        { opacity: 1, stagger: 0.06 }, 0);
+      const rows = [...chart.querySelectorAll('.chart-row')];
+      if (rows.length) {
+        rows.forEach((row, index) => {
+          const position = 0.25 + index * 0.48;
+          timeline.fromTo(row.querySelector('span'), { y: 4 }, { opacity: 1, y: 0 }, position)
+            .to(row.querySelector('i'), { scaleX: 1, duration: 0.75 }, position + 0.12)
+            .fromTo(row.querySelector('strong'), { y: 5 }, { opacity: 1, y: 0 }, position + 0.55);
+        });
+      } else {
+        timeline.to(fills, { scaleX: 1, duration: 0.9 }, 0.25)
+          .fromTo(chart.querySelector('.chart-number'), { y: 6 }, { opacity: 1, y: 0, duration: 0.55 }, 0.9);
+      }
+      entry.start = () => {
+        if (languageChanging || chart.dataset.chartState !== 'pending' || chart.closest('[hidden]')) return;
+        if (chart.getBoundingClientRect().top > innerHeight * 0.82) return;
+        chart.dataset.chartState = 'running';
+        entry.trigger?.kill();
+        timeline.play();
+      };
+      if (reducedMotion) {
+        timeline.progress(1);
+      } else {
+        entry.trigger = ScrollTrigger.create({
+          id: `editorial-chart-${editorialCharts.size}`, trigger: chart, start: 'top 82%',
+          onEnter: entry.start, onRefresh: entry.start
+        });
+        if (chart.dataset.chartState !== 'pending') entry.trigger.kill();
+      }
+    }));
   }
 
   function setupCrowdReveal() {
@@ -588,26 +609,14 @@
   }
 
   function setupIntroAnimations() {
-    const age = root.querySelector('.age-scene');
-    const frame = document.createElement('div');
-    frame.className = 'age-frame';
-    age.before(frame);
-    frame.append(age);
     gsap.matchMedia().add('(prefers-reduced-motion: no-preference)', () => {
-      const sequence = gsap.timeline({ scrollTrigger: {
-        id: 'age-sequence', trigger: age, pin: age,
-        start: () => `top top+=${Math.max(54, (innerHeight - age.offsetHeight + 34) / 2)}`,
-        end: () => `+=${Math.max(380, innerHeight * 0.85)}`,
-        scrub: true, invalidateOnRefresh: true, anticipatePin: 1
-      }});
-      // Arrive fully visible, establish the pinned frame, then reveal the range.
-      sequence.set('.age-lineup img', { opacity: 0.45, scaleY: 0.82, transformOrigin: 'bottom center' })
-        .to({}, { duration: 0.25 })
-        .to('.age-lineup img', { opacity: 1, scaleY: 1, stagger: 0.08, duration: 0.45, ease: 'power1.inOut' })
-        .to({}, { duration: 0.2 });
       gsap.from('.hero-character', {
         x: () => window.innerWidth - root.querySelector('.hero-character').getBoundingClientRect().left + 24,
         opacity: 0, duration: 1.15, ease: 'power3.out'
+      });
+      gsap.from('.age-lineup img', {
+        y: 28, opacity: 0, stagger: 0.1, duration: 0.65,
+        scrollTrigger: { trigger: '.age-scene', start: 'top 85%', toggleActions: 'play none none reverse' }
       });
       const records = gsap.timeline({ scrollTrigger: {
         id: 'records-sequence', trigger: '.intro-scene-1', start: 'top 65%', end: 'bottom 50%', scrub: true
@@ -760,7 +769,8 @@
     masterTimeline = null;
     reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     ScrollTrigger.getAll()
-      .filter((trigger) => trigger.vars.trigger?.closest?.("#analysis") || trigger.vars.trigger === analysis)
+      .filter((trigger) => !String(trigger.vars.id || "").startsWith("editorial-chart-")
+        && (trigger.vars.trigger?.closest?.("#analysis") || trigger.vars.trigger === analysis))
       .forEach((trigger) => trigger.kill(true));
     pinTrigger = null;
     setStaticLayout();
@@ -780,6 +790,7 @@
     createPeople();
 
     if (!window.gsap || !window.ScrollTrigger) {
+      document.documentElement.classList.remove("chart-motion");
       stage.dataset.ready = "fallback";
       storyRail.classList.add("story-rail-fallback");
       return;
@@ -801,6 +812,7 @@
     window.matchMedia("(prefers-reduced-motion: reduce)").addEventListener("change", refreshLayout);
     window.addEventListener('story:viewportchange', refreshLayout);
     window.addEventListener('story:languagechange', () => {
+      languageChanging = true;
       setStateMetadata(activeIndex, pinTrigger?.progress || 0, false);
       announcement.textContent = t(STORY_STATES[STATE_ORDER[activeIndex]].summary);
       root.querySelectorAll('[data-quiz]').forEach(quiz => {
@@ -808,6 +820,10 @@
         if (selected) quiz.querySelector('.quiz-explanation').textContent =
           t(selected.dataset.correct === 'true' ? 'Correct.' : 'Not quite.') + ' ' + t(QUIZ_EXPLANATIONS[quiz.dataset.quiz]);
       });
+    });
+    window.addEventListener('story:languagepositioned', () => {
+      languageChanging = false;
+      editorialCharts.forEach(entry => entry.start?.());
     });
     document.fonts.ready.then(() => ScrollTrigger.refresh());
 
