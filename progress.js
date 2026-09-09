@@ -23,12 +23,15 @@
     const item = document.createElement('li');
     const button = document.createElement('button');
     button.type = 'button';
+    button.style.setProperty('--section-color', ['#80c5ff', '#f1e500', '#f26ba0', '#be7bff', '#f49e4d', '#b3ed49'][index]);
     button.innerHTML = `<span class="progress-mark" aria-hidden="true"></span><span class="progress-label">${section.label}</span>`;
     button.setAttribute('aria-label', section.label);
     button.addEventListener('click', () => {
       if (section.element.hidden || section.element.closest('[hidden]')) return;
       // Navigating to an available chapter never answers or bypasses a quiz.
-      window.scrollTo({ top: Math.max(0, section.top - 44), behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      const top = Math.max(0, section.top - 44);
+      if (window.StoryScroll) StoryScroll.to(top);
+      else window.scrollTo({ top, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
     });
     section.button = button;
     section.index = index;

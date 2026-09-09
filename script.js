@@ -95,11 +95,11 @@
     }),
     NO_CHRONIC_FOCUS: Object.freeze({
       comparison: "chronic", layout: "groups", groups: [1, 0.2], source: [0.341, 0], values: [1, 0], fields: 1, normalization: 1, legend: 1,
-      summary: "Among children without chronic disease, 34.1% had a hospital-related source. Table 2."
+      summary: "Among children without chronic disease, 34.1% had a hospital-related source. Table 2 (original paper, PDF p. 9)."
     }),
     CHRONIC_FOCUS: Object.freeze({
       comparison: "chronic", layout: "groups", groups: [0.2, 1], source: [0.341, 0.644], values: [0.28, 1], fields: 1, normalization: 1, legend: 1,
-      summary: "Among children with chronic disease, 64.4% had a hospital-related source. Table 2."
+      summary: "Among children with chronic disease, 64.4% had a hospital-related source. Table 2 (original paper, PDF p. 9)."
     }),
     CHRONIC_COMPARE: Object.freeze({
       comparison: "chronic", layout: "groups", groups: [1, 1], source: [0.341, 0.644], values: [1, 1], fields: 1, normalization: 1, legend: 1,
@@ -147,6 +147,8 @@
   const cardAnimations = [];
   const stateTriggers = [];
   const editorialCharts = new Map();
+  let lateTimeline = null;
+  let lateCharts = null;
   let languageChanging = false;
   let layout = null;
   let activeIndex = 0;
@@ -257,6 +259,7 @@
 
   function setStaticLayout() {
     layout = calculateLayout();
+    normalization.style.top = `${Math.max(layout.height * 0.06, layout.labelTops[0] - normalization.offsetHeight - clamp(layout.height * 0.06, 24, 50))}px`;
     markerWidths = markers.map(marker => marker.offsetWidth);
     targetCache = new Map();
     people.forEach((person) => {
@@ -459,6 +462,7 @@
       animation.kill();
     });
     storyCards.forEach((card) => {
+      gsap.set(card, { clearProps: 'clipPath' });
       if (card.closest('.quiz-step')) {
         gsap.set(card, { clearProps: 'transform,opacity,visibility' });
         return;
@@ -491,6 +495,83 @@
     });
   }
 
+  function prepareLateStory() {
+    const passages = [...root.querySelectorAll('[data-late-view]')];
+    if (!passages.length) return;
+    const layer = document.createElement('div');
+    layer.className = 'late-visuals';
+    const annual = passages[0].querySelector('.annual-chart');
+    const diagnosis = passages[1].querySelector('.diagnosis-chart');
+    // Move the original nodes: exact values, translations and captions stay attached.
+    layer.append(annual, diagnosis);
+    stage.append(layer);
+    analysis.classList.add('late-connected');
+    lateCharts = { passages, annual, diagnosis, layer };
+  }
+
+  function setupLateStory() {
+    lateTimeline?.scrollTrigger?.kill();
+    lateTimeline?.kill();
+    if (!lateCharts || lateCharts.passages[0].closest('[hidden]')) return;
+    const { passages, annual, diagnosis } = lateCharts;
+    const populationLayer = root.querySelector('.population-layer');
+    const origin = passages[0].getBoundingClientRect().top + window.scrollY - innerHeight;
+    const positions = passages.map(step => step.getBoundingClientRect().top + window.scrollY - innerHeight - origin);
+    const heights = passages.map(step => step.offsetHeight);
+    const total = positions[3] + heights[3] + innerHeight;
+    const mobileTiming = innerWidth <= 760 || (innerWidth <= 960 && innerHeight <= 520);
+    // Finish before the text reaches center; sample geometry only on setup/refresh.
+    const fillWindows = passages.slice(0, 2).map((step, index) => {
+      const card = step.querySelector('[data-story-card]');
+      const text = card.querySelector('.story-band-inner');
+      const textTop = text.getBoundingClientRect().top + scrollY - Number(gsap.getProperty(card, 'y'));
+      return Math.max(1, textTop - innerHeight * 0.55 - 30 - origin - positions[index]);
+    });
+    if (innerWidth <= 760) {
+      // Reserve the pinned chart's reading area as foreground text scrolls past.
+      // Geometry is sampled during setup/refresh, never on animation frames.
+      [annual, diagnosis].forEach((chart, index) => {
+        const card = passages[index].querySelector('[data-story-card]');
+        const chartBottom = chart.getBoundingClientRect().bottom - stage.getBoundingClientRect().top + 34 + 12;
+        const clip = gsap.fromTo(card, { clipPath: 'inset(0% 0% 0% 0%)' }, {
+          clipPath: 'inset(100% 0% 0% 0%)', ease: 'none',
+          scrollTrigger: { id: `late-foreground-clip-${index}`, trigger: card,
+            start: `top top+=${chartBottom}`, end: `bottom top+=${chartBottom}`, scrub: true }
+        });
+        cardAnimations.push(clip);
+      });
+    }
+    const travel = reducedMotion ? 0 : 18;
+    // Only the already-supported admission chart, diagnosis chart and neutral
+    // population are connected here. No new analytical relationships are added.
+    lateTimeline = gsap.timeline({ scrollTrigger: {
+      id: 'late-story-continuity', trigger: passages[0], start: 'top bottom',
+      endTrigger: passages[3], end: 'bottom top', scrub: reducedMotion ? true : 0.3
+    }, defaults: { ease: 'none' } });
+    gsap.set([annual, diagnosis], { autoAlpha: 0, y: travel });
+    gsap.set([annual, diagnosis].flatMap(chart => [...chart.querySelectorAll('figcaption, .chart-axis, .simple-axis, .chart-row > span, .chart-row > strong, .chart-number')]), { opacity: 1, y: 0 });
+    const annualFills = [...annual.querySelectorAll('.chart-track i')];
+    const diagnosisFill = diagnosis.querySelector('.diagnosis-track i');
+    gsap.set([...annualFills, diagnosisFill], { scaleX: reducedMotion ? 1 : 0, transformOrigin: 'left center' });
+    lateTimeline.to({}, { duration: total }, 0)
+      .fromTo(populationLayer, { opacity: 1, y: 0 }, { opacity: 0.12, duration: heights[0] * 0.2 }, 0)
+      .to(annual, { autoAlpha: 1, y: 0, duration: mobileTiming ? fillWindows[0] * 0.2 : heights[0] * 0.2 }, 0);
+    if (!reducedMotion) annualFills.forEach((fill, index) => {
+      lateTimeline.to(fill, { scaleX: 1, duration: mobileTiming ? fillWindows[0] * 0.3 : heights[0] * 0.22 }, mobileTiming ? fillWindows[0] * (0.05 + index * 0.3) : heights[0] * (0.15 + index * 0.2));
+    });
+    const crossfade = mobileTiming ? fillWindows[1] * 0.2 : heights[1] * 0.22;
+    lateTimeline.to(annual, { autoAlpha: 0, y: -travel, duration: crossfade }, positions[1])
+      .to(diagnosis, { autoAlpha: 1, y: 0, duration: crossfade }, positions[1]);
+    if (!reducedMotion) lateTimeline.to(diagnosisFill, { scaleX: 1, duration: mobileTiming ? fillWindows[1] * 0.85 : heights[1] * 0.6 }, positions[1] + crossfade * 0.5);
+    lateTimeline.to(diagnosis, { autoAlpha: 0, y: -travel, duration: heights[2] * 0.55 }, positions[2])
+      .to(populationLayer, { opacity: 1, duration: heights[2] * 0.6 }, positions[2])
+      .to(populationLayer, { y: -travel, duration: heights[3] }, positions[3]);
+    lateTimeline.eventCallback('onUpdate', () => {
+      const time = lateTimeline.time();
+      stage.dataset.lateScene = time <= 0 ? '' : passages[positions.reduce((active, position, index) => time >= position ? index : active, 0)].dataset.lateView;
+    });
+  }
+
   function setupScroll() {
     storySteps = [...root.querySelectorAll("[data-visual-state]")].filter((step) => !step.closest("[hidden]"));
     storyCards = storySteps.flatMap((step) => [...step.querySelectorAll("[data-story-card]")]);
@@ -507,6 +588,7 @@
     });
     createCardAnimations();
     setupEditorialCharts();
+    setupLateStory();
     setupCrowdReveal();
     storySteps.slice(0, -1).forEach((step, index) => {
       const current = STATE_ORDER.indexOf(step.dataset.visualState);
@@ -610,10 +692,7 @@
 
   function setupIntroAnimations() {
     gsap.matchMedia().add('(prefers-reduced-motion: no-preference)', () => {
-      gsap.from('.hero-character', {
-        x: () => window.innerWidth - root.querySelector('.hero-character').getBoundingClientRect().left + 24,
-        opacity: 0, duration: 1.15, ease: 'power3.out'
-      });
+      // The opening character entrance is coordinated by loader.js.
       gsap.from('.age-lineup img', {
         y: 28, opacity: 0, stagger: 0.1, duration: 0.65,
         scrollTrigger: { trigger: '.age-scene', start: 'top 85%', toggleActions: 'play none none reverse' }
@@ -650,7 +729,8 @@
     const step = storySteps[stepIndex];
     const scrollTarget = step.getBoundingClientRect().top + window.scrollY
       + step.offsetHeight / 2 - window.innerHeight / 2;
-    window.scrollTo({
+    if (window.StoryScroll) StoryScroll.to(scrollTarget);
+    else window.scrollTo({
       top: scrollTarget,
       behavior: reducedMotion ? "auto" : "smooth"
     });
@@ -750,7 +830,9 @@
         const target = step.querySelector("[data-story-card]");
         target.tabIndex = -1;
         target.focus({ preventScroll: true });
-        window.scrollTo({ top: step.getBoundingClientRect().top + window.scrollY + step.offsetHeight / 2 - window.innerHeight / 2, behavior: reducedMotion ? "auto" : "smooth" });
+        const top = step.getBoundingClientRect().top + window.scrollY + step.offsetHeight / 2 - window.innerHeight / 2;
+        if (window.StoryScroll) StoryScroll.to(top);
+        else window.scrollTo({ top, behavior: reducedMotion ? "auto" : "smooth" });
       });
     });
     chapters.slice(1).forEach(chapter => { chapter.hidden = true; });
@@ -797,6 +879,7 @@
     }
 
     gsap.registerPlugin(ScrollTrigger);
+    prepareLateStory();
     gsap.defaults({ ease: "power2.inOut" });
     setStaticLayout();
     setVisualState(0);

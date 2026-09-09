@@ -1937,3 +1937,318 @@ html[lang="vi"] { --font-display: "Lora Editorial", "Times New Roman", serif; }
     opacity: 0;
   }
 }
+/* Opening layers are active only after the guarded head bootstrap. The actual
+   hero character stays in its existing grid cell throughout the handoff. */
+.intro-loader, .intro-white { display: none; }
+html.intro-loading { overscroll-behavior: none; }
+.intro-loading .intro-white {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 201;
+  background: #fff;
+  opacity: 0;
+  clip-path: ellipse(0 0 at 50% 50%);
+  pointer-events: none;
+}
+.intro-loading .intro-loader { display: block; position: fixed; inset: 0; z-index: 203; pointer-events: none; }
+.intro-frames { position: absolute; inset: 12% 7% 18%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: center; }
+.intro-frame { display: grid; place-items: center; width: calc(100% - 16px); justify-self: center; height: min(53svh, 420px); padding: clamp(14px, 2vw, 28px); background: #fff; border: 1px solid #d7d5d9; clip-path: inset(0 100% 0 0); }
+.intro-frame img { display: block; width: 100%; height: 100%; min-height: 0; object-fit: contain; }
+.intro-meter { position: absolute; inset: auto 6vw max(28px, env(safe-area-inset-bottom)); color: #fff; }
+.intro-percent { transform-origin: left center; display: block; margin-bottom: 12px; font: 12px/1 Arial, sans-serif; font-variant-numeric: tabular-nums; }
+.intro-track { height: 2px; background: #343434; overflow: hidden; }
+.intro-track span { display: block; height: 100%; background: #fff; transform: scaleX(0); transform-origin: left; }
+.intro-loading .hero-character { position: relative; z-index: 202; opacity: var(--intro-character, 0); }
+.intro-loading :is(.hero-logos, .hero-composition h1, .hero-foot, .story-progress, .language-switcher) {
+  z-index: 202;
+
+}
+.intro-loading :is(.hero-logos, .hero-composition h1, .hero-foot) { position: relative; }
+.intro-loading .hero-composition h1 { opacity: var(--intro-title, 0); transform: translateY(calc((1 - var(--intro-title, 0)) * 22px)); }
+.intro-loading .hero-logos { opacity: var(--intro-logos, 0); transform: translateY(calc((1 - var(--intro-logos, 0)) * 12px)); }
+.intro-loading .hero-foot { opacity: var(--intro-foot, 0); transform: translateY(calc((1 - var(--intro-foot, 0)) * 10px)); }
+.intro-loading :is(.story-progress, .language-switcher) { opacity: var(--intro-nav, 0); transform: translateY(calc((1 - var(--intro-nav, 0)) * -8px)); }
+.intro-loading .intro-meter { opacity: var(--intro-meter, 0); transform: translateY(calc((1 - var(--intro-meter, 0)) * 8px)); }
+@media (max-width: 600px) {
+  .intro-frames { inset: 18% 5% 23%; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .intro-frame { grid-row: 1; grid-column: 1 / 4; height: min(42svh, 310px); }
+  .intro-frame:nth-child(2) { grid-column: 2 / 5; }
+  .intro-frame:nth-child(3) { grid-column: 3 / 6; }
+}
+
+/* Additional reference accents: keep existing subgroup and source encodings. */
+:root { --accent-yellow: #f5dc23; --accent-orange: #ffab4b; --accent-lime: #b9e64b; }
+.normalization { border-bottom: 3px solid var(--accent-yellow); }
+.language-switcher button:hover, .story-progress button:not(:disabled):hover { background: #fff7cb; color: var(--ink); }
+.reading-cue:hover .reading-line { background: var(--accent-orange); }
+.technical-term:hover, .technical-term:focus-visible { text-decoration-color: #bb6500; background-color: #fff0dd; }
+.finding-quiz .quiz-option[aria-pressed="true"][data-correct="true"] { background: var(--accent-lime); color: #101514; }
+@media (prefers-reduced-motion: reduce) {
+  .intro-frame { clip-path: none; visibility: hidden; }
+}
+
+/* Keep the localized title as one text node; the palette follows its lettering. */
+@supports (background-clip: text) {
+  .article-hero h1 em {
+    --focus-colors: linear-gradient(90deg, #80c4fa 0% 12%, #f5dc23 22% 30%, #ee68a1 40% 48%, #c17afa 58% 66%, #ffab4b 76% 84%, #b9e64b 94% 100%);
+    background-image: var(--focus-colors);
+    --focus-indent: 7vw;
+    background-size: calc(100% - var(--focus-indent)) 100%;
+    background-position: right center;
+    background-repeat: no-repeat;
+    padding-bottom: .16em;
+    margin-bottom: -.16em;
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+}
+@media (forced-colors: active) {
+  .article-hero h1 em { background: none; color: CanvasText; -webkit-text-stroke: 0; }
+}
+
+@media (max-width: 760px) {
+  .article-hero .hero-composition h1 em { --focus-indent: 2vw; }
+}
+
+/* The opening meter is separate from the site's navigation controls. */
+.intro-meter { left: 0; right: 0; width: min(260px, 64vw); margin-inline: auto; text-align: center; }
+.intro-percent { transform-origin: center center; }
+
+/* A brief reflection crosses the existing gradient; the underlying colors stay fixed. */
+@supports (background-clip: text) {
+  @media (prefers-reduced-motion: no-preference) and (forced-colors: none) {
+    html:not(.intro-loading) .article-hero h1 em {
+      background-image: linear-gradient(110deg, transparent 46%, rgb(255 255 255 / 14%) 48%, rgb(255 255 255 / 65%) 50%, rgb(255 255 255 / 14%) 52%, transparent 54%), var(--focus-colors);
+      background-size: 200% 100%, calc(100% - var(--focus-indent)) 100%;
+      background-position: 200% center, right center;
+      animation: focus-reflection 4.8s ease-in-out 2s infinite;
+    }
+  }
+}
+@keyframes focus-reflection {
+  0% { background-position: 200% center, right center; }
+  46%, 100% { background-position: -100% center, right center; }
+}
+
+@media (max-width: 760px), (max-width: 960px) and (max-height: 520px) {
+  .article-hero { padding: 24px 24px 20px; gap: 20px; justify-content: center; }
+  .article-hero .hero-composition { order: 0; display: grid; grid-template-columns: minmax(0, 1fr); width: 100%; padding: 0; gap: 16px; }
+  .article-hero .hero-composition h1 { width: 100%; max-width: none; font-size: clamp(56px, 18vw, 82px); }
+  html[lang="vi"] .article-hero .hero-composition h1 { font-size: clamp(46px, 15vw, 64px); }
+  .article-hero .hero-composition h1 em { padding-left: 2vw; --focus-indent: 2vw; }
+  .article-hero .hero-character { width: min(62vw, 34svh, 260px); justify-self: center; }
+  .article-hero .hero-logos { order: 1; align-self: center; }
+  .article-hero .hero-foot { order: 2; flex-direction: column; align-items: center; text-align: center; gap: 10px; width: 100%; padding-top: 12px; }
+  .intro-frames { inset: 12% 5% 20%; display: grid; grid-template-columns: minmax(0, 1fr); }
+  .intro-frames .intro-frame { grid-column: 1; grid-row: 1; width: min(64vw, 300px); height: min(42svh, 310px); }
+}
+@media (max-width: 960px) and (max-height: 520px) {
+  .article-hero { padding-block: 12px; gap: 10px; }
+  .article-hero .hero-composition { gap: 8px; }
+  .article-hero .hero-composition h1,
+  html[lang="vi"] .article-hero .hero-composition h1 { width: fit-content; justify-self: center; font-size: clamp(36px, 10svh, 48px); }
+  .article-hero .hero-character { width: min(24svh, 110px); }
+  .article-hero .partner-logo { width: 28px; height: 28px; }
+  .article-hero .collab-lab { font-size: 20px; }
+  .article-hero .hero-foot { flex-direction: row; justify-content: space-between; padding-top: 8px; }
+  .intro-frames { inset-block: 8% 25%; }
+  .intro-frames .intro-frame { width: min(42vw, 200px); height: 54svh; padding: 12px; }
+}
+
+/* A 2.2-second reflection pass leaves about 2.6 seconds of quiet per cycle. */
+/* Keep the cue's original layout box; draw a clearer arrow inside its visual bounds. */
+.reading-cue .reading-line,
+.reading-cue:hover .reading-line {
+  width: 1px;
+  background: transparent;
+  overflow: visible;
+  transition: none;
+}
+.reading-cue .reading-line::after {
+  left: -.5px;
+  top: 2px;
+  width: 2px;
+  height: 23px;
+  background: var(--ink);
+  opacity: 1;
+  transform: none;
+  animation: none;
+}
+.reading-cue .reading-line::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: 17px;
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid var(--ink);
+  border-bottom: 2px solid var(--ink);
+  transform: rotate(45deg);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .reading-cue .reading-line { animation: reading-arrow-nudge 3.2s ease-in-out infinite; }
+}
+@keyframes reading-arrow-nudge {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(4px); }
+}
+@media (max-width: 760px), (max-width: 960px) and (max-height: 520px) {
+  .article-hero .hero-composition { gap: 32px; }
+  .article-hero .hero-composition h1 { position: relative; left: -6px; }
+  .article-hero .hero-character { margin-left: 24px; }
+  .article-hero .hero-logos { margin-top: 12px; }
+}
+@media (max-width: 960px) and (max-height: 520px) {
+  .article-hero .hero-composition { gap: 16px; }
+  .article-hero .hero-character { margin-left: 20px; }
+  .article-hero .hero-logos { margin-top: 6px; }
+}
+/* Mobile cover: distribute the available height, keeping the supporting row low. */
+@media (max-width: 760px), (max-width: 960px) and (max-height: 520px) {
+  .article-hero { display: grid; grid-template-rows: auto auto minmax(min-content, 1fr); gap: 14px; padding-block: clamp(20px, 3svh, 32px) max(18px, calc(env(safe-area-inset-bottom) + 4px)); }
+  .article-hero .hero-composition { align-self: start; padding-top: clamp(30px, 10svh, 94px); gap: clamp(28px, 4svh, 40px); }
+  .article-hero .hero-composition h1 { width: fit-content; max-width: 100%; justify-self: center; left: -8px; }
+  .article-hero .hero-composition h1 em { padding-left: clamp(16px, 6vw, 28px); --focus-indent: clamp(16px, 6vw, 28px); }
+  .article-hero .hero-logos { justify-self: center; margin-top: 12px; }
+  .article-hero .hero-foot { margin: 0; gap: 0; align-self: stretch; justify-content: space-between; }
+  .article-hero .hero-foot .reading-cue { margin-top: clamp(18px, 4svh, 36px); min-height: 36px; }
+}
+@media (max-width: 960px) and (max-height: 520px) {
+  .article-hero { gap: 8px; padding-block: 8px max(12px, calc(env(safe-area-inset-bottom) + 4px)); }
+  .article-hero .hero-composition { gap: 14px; padding-top: 0; }
+  .article-hero .hero-logos { margin-top: 0; }
+  .article-hero .hero-foot .reading-cue { margin-top: 0; }
+}
+/* One crisp SVG glyph replaces intersecting CSS borders at every zoom level. */
+.reading-cue .reading-line::before, .reading-cue .reading-line::after { content: none; }
+.reading-line svg { position: absolute; left: -9px; top: -3px; width: 20px; height: 38px; color: var(--ink); overflow: visible; }
+
+/* Normalization is an annotation, never a line through its text. */
+#normalization { width: max-content; max-width: 89%; padding: 7px 12px; background: #fff2a8; color: var(--ink); border: 1px solid #e8d46a; text-align: center; line-height: 1.35; }
+.source-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 26px; }
+.legend-item { display: flex; align-items: center; gap: 9px; }
+.legend-item .legend-pattern, .legend-remainder { width: 24px; height: 18px; flex: 0 0 auto; }
+.legend-remainder { display: inline-block; border: 1px solid var(--ink-muted); background: #fff; }
+.legend-item .legend-explanation { margin: 0; color: var(--ink); }
+.chart-key { font: 12px/1.45 var(--font-reading); color: var(--ink-muted); margin: 16px 0 0; }
+.diagnosis-key { display: grid; gap: 8px; }
+.diagnosis-key > span { display: flex; gap: 8px; align-items: center; }
+.key-filled, .key-empty { display: inline-block; width: 16px; height: 12px; flex: 0 0 auto; border: 1px solid var(--ink-muted); }
+.key-filled { background: var(--source); }
+.key-empty { background: var(--line); }
+
+/* Existing late-story charts share the original pinned stage and foreground rail. */
+.late-visuals { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+.late-visuals .editorial-chart { position: absolute; top: 26%; left: 54%; width: 40%; margin: 0; padding: 20px 0; opacity: 0; visibility: hidden; background: var(--paper); }
+.late-visuals .chart-key { font-size: clamp(11px, 1cqw, 14px); }
+.late-visuals .editorial-chart figcaption { font-size: clamp(14px, 1.2cqw, 19px); }
+.late-visuals .chart-row { font-size: clamp(12px, 1.2cqw, 18px); }
+.late-connected .story-step[data-late-view] { min-height: 145svh; padding: 12svh 5vw; justify-content: flex-start; }
+.late-connected [data-late-view] .story-band { width: 43%; min-height: 0; margin: 0; padding: 24px 0; background: var(--paper); }
+.late-connected [data-late-view] .story-band::before { content: none; }
+.late-connected [data-late-view] .story-band-inner { width: 100%; }
+.late-connected [data-late-view="closing"] { min-height: 120svh; }
+@media (max-width: 760px) {
+  .late-connected .story-step[data-late-view] { min-height: 165svh; padding: 38svh 24px 10svh; align-items: flex-start; }
+  .late-connected [data-late-view] .story-band { width: 100%; padding: 18px 0; }
+  .late-visuals .editorial-chart { top: 3%; left: 6%; width: 88%; padding: 10px 0; }
+  .late-visuals .chart-row { margin-block: 10px; font-size: 12px; }
+  .late-visuals .editorial-chart figcaption { margin-bottom: 10px; font-size: 13px; }
+  .late-visuals .chart-key { margin-top: 10px; font-size: 11px; }
+  .late-visuals .chart-number { font-size: 36px; margin-block: 8px; }
+  .late-visuals .diagnosis-track { height: 14px; }
+}
+.scene-stage[data-state="STUDY_CONTEXT"] .person-art::after { background: var(--context); }
+
+/* Closing narrative uses one centered editorial rail with matching gutters. */
+.late-connected .story-step:is([data-late-view="limits"], [data-late-view="closing"]) {
+  padding-inline: clamp(24px, 5vw, 80px);
+  justify-content: center;
+}
+.late-connected :is([data-late-view="limits"], [data-late-view="closing"]) .story-band {
+  width: min(100%, 40rem);
+  margin-inline: auto;
+}
+
+/* The ending background belongs to the full-width sections, not the text rail. */
+.late-connected .story-step:is([data-late-view="limits"], [data-late-view="closing"]) {
+  background: #fff;
+}
+.late-connected .story-step[data-late-view="closing"] {
+  min-height: 0;
+  padding-block: clamp(32px, 6svh, 64px) 24px;
+}
+.late-connected [data-late-view="closing"] .story-band {
+  padding-block: 0;
+}
+.text-equivalent {
+  margin-top: 0;
+  border-top: 0;
+  background: #fff;
+}
+
+/* Align the expandable reading panel with the Discussion text rail. */
+.text-equivalent {
+  width: min(40rem, calc(100% - 2 * clamp(24px, 5vw, 80px)));
+}
+.text-equivalent > summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 20px;
+  border: 1px solid #bcbcbc;
+  border-radius: 0;
+  list-style: none;
+  background: #f7f7f5;
+}
+.text-equivalent > summary::-webkit-details-marker { display: none; }
+.text-equivalent > summary::before {
+  content: '+';
+  flex: 0 0 16px;
+  text-align: center;
+  font-size: 20px;
+  line-height: 1;
+}
+.text-equivalent[open] > summary::before { content: '\2212'; }
+.text-equivalent > summary:hover { background: #efefec; }
+.text-equivalent > summary:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+.text-equivalent > .text-equivalent-body {
+  padding: 24px 20px 28px;
+  border: 1px solid #bcbcbc;
+  border-top: 0;
+  background: #f7f7f5;
+}
+
+/* Section accents stay on the navigation marks; text remains high contrast. */
+.story-progress button[data-status="active"] .progress-mark,
+.story-progress button[data-status="complete"] .progress-mark,
+.story-progress button:not(:disabled):hover .progress-mark,
+.story-progress button:focus-visible .progress-mark {
+  background: var(--section-color);
+}
+.story-progress button:not(:disabled):hover {
+  background: transparent;
+  color: var(--ink);
+  box-shadow: none;
+}
+.story-progress button:not(:disabled):hover .progress-mark { height: 4px; }
+.story-progress button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+html.lenis { scroll-behavior: auto !important; }
+
+/* A translucent lower-edge marker follows inline fragments without changing type. */
+.technical-term,
+.intro-scene-2 .technical-term,
+.intro-scene-3 .technical-term {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M1 73 Q25 68 52 73 T99 71 L100 94 Q73 98 49 94 T0 96 Z' fill='%23be7bff' fill-opacity='.18'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.technical-term:hover,
+.technical-term:focus-visible {
+  background-color: transparent;
+  text-decoration-color: var(--ink-muted);
+}
