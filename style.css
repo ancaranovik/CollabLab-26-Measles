@@ -2237,15 +2237,11 @@ html.intro-loading { overscroll-behavior: none; }
 .story-progress button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 html.lenis { scroll-behavior: auto !important; }
 
-/* A translucent lower-edge marker follows inline fragments without changing type. */
+/* Technical terms retain their underline without a marker background. */
 .technical-term,
 .intro-scene-2 .technical-term,
 .intro-scene-3 .technical-term {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M1 73 Q25 68 52 73 T99 71 L100 94 Q73 98 49 94 T0 96 Z' fill='%23be7bff' fill-opacity='.18'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
+  background-image: none;
 }
 .technical-term:hover,
 .technical-term:focus-visible {
