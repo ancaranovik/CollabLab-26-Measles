@@ -1884,7 +1884,6 @@ html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; width: 0; heig
 }
 .intro-scene-2 .technical-term,
 .intro-scene-3 :is(.accent-vaccinated, .accent-unvaccinated, .technical-term) {
-  background-image: linear-gradient(transparent 78%, var(--source-soft) 78%);
   background-repeat: no-repeat;
   background-size: 0% 100%;
 }
