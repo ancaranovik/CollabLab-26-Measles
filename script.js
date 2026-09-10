@@ -155,6 +155,14 @@
   let masterTimeline = null;
   let pinTrigger = null;
   let resizeTimer = null;
+  let viewportRefreshPending = false;
+  let touchActive = false;
+  const viewportSnapshot = () => ({
+    width: innerWidth, height: innerHeight,
+    orientation: screen.orientation?.angle ?? window.orientation ?? 0,
+    compact: matchMedia('(max-width: 960px) and (max-height: 520px)').matches
+  });
+  let measuredViewport = viewportSnapshot();
   let reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   let initialized = false;
 
@@ -846,7 +854,27 @@
     });
   }
 
+  function flushViewportRefresh() {
+    if (!viewportRefreshPending || touchActive || ScrollTrigger.isScrolling()) return;
+    viewportRefreshPending = false;
+    refreshLayout();
+  }
+
+  function scheduleViewportRefresh(force = false) {
+    const next = viewportSnapshot();
+    const sameLayout = next.width === measuredViewport.width
+      && next.orientation === measuredViewport.orientation
+      && next.compact === measuredViewport.compact;
+    const chromeResize = matchMedia('(hover: none) and (pointer: coarse)').matches
+      && Math.abs(next.height - measuredViewport.height) < measuredViewport.height * 0.25;
+    if (!force && sameLayout && (next.height === measuredViewport.height || chromeResize)) return;
+    viewportRefreshPending = true;
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(flushViewportRefresh, 220);
+  }
+
   function refreshLayout() {
+    measuredViewport = viewportSnapshot();
     masterTimeline?.kill();
     masterTimeline = null;
     reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -879,6 +907,10 @@
     }
 
     gsap.registerPlugin(ScrollTrigger);
+    // One resize owner: toolbar resizes must not refresh/revert a live Safari pin.
+    // Real viewport changes are rebuilt below after touch and momentum settle.
+    ScrollTrigger.config({ ignoreMobileResize: true,
+      autoRefreshEvents: 'visibilitychange,DOMContentLoaded,load' });
     prepareLateStory();
     gsap.defaults({ ease: "power2.inOut" });
     setStaticLayout();
@@ -888,10 +920,19 @@
     setupScroll();
     setupIntroAnimations();
 
-    window.addEventListener("resize", () => {
-      window.clearTimeout(resizeTimer);
-      resizeTimer = window.setTimeout(refreshLayout, 180);
-    });
+    window.addEventListener('resize', () => scheduleViewportRefresh(), { passive: true });
+    window.addEventListener('orientationchange', () => scheduleViewportRefresh(true), { passive: true });
+    window.addEventListener('touchstart', () => { touchActive = true; }, { passive: true });
+    const endTouch = event => {
+      touchActive = event.touches.length > 0;
+      if (viewportRefreshPending) {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(flushViewportRefresh, 220);
+      }
+    };
+    window.addEventListener('touchend', endTouch, { passive: true });
+    window.addEventListener('touchcancel', endTouch, { passive: true });
+    ScrollTrigger.addEventListener('scrollEnd', flushViewportRefresh);
     window.matchMedia("(prefers-reduced-motion: reduce)").addEventListener("change", refreshLayout);
     window.addEventListener('story:viewportchange', refreshLayout);
     window.addEventListener('story:languagechange', () => {
@@ -908,7 +949,7 @@
       languageChanging = false;
       editorialCharts.forEach(entry => entry.start?.());
     });
-    document.fonts.ready.then(() => ScrollTrigger.refresh());
+    document.fonts.ready.then(() => ScrollTrigger.refresh(true));
 
     initialized = true;
     setupQuiz();

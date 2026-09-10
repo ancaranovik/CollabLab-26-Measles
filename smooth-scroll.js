@@ -23,6 +23,19 @@
     gsap.ticker.lagSmoothing(0);
   }
 
+  // A touchstart can precede touchmove by many frames. Cancel navigation now,
+  // without preventing native dragging, momentum or direction reversal.
+  function interruptScroll() {
+    if (lenis?.isScrolling === 'smooth') {
+      lenis.scrollTo(lenis.actualScroll, { immediate: true, force: true });
+    }
+  }
+  window.addEventListener('touchstart', interruptScroll, { passive: true });
+  window.addEventListener('keydown', event => {
+    if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(event.key)) interruptScroll();
+  });
+  window.addEventListener('story:languagechange', interruptScroll);
+
   function scrollTo(top, onComplete) {
     if (html.classList.contains('intro-loading')) return;
     top = Math.max(0, Math.min(top, document.documentElement.scrollHeight - innerHeight));
